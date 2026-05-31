@@ -7,7 +7,11 @@ variable "aws_region" {
 variable "bucket_name" {
   description = "S3 bucket name for Terraform state (must be globally unique)"
   type        = string
-  default     = "pengchao2022-terraform-state"  # 改成你的唯一名称
+  
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.bucket_name))
+    error_message = "Bucket name must be globally unique and follow S3 naming conventions."
+  }
 }
 
 variable "dynamodb_table_name" {
@@ -19,14 +23,5 @@ variable "dynamodb_table_name" {
 variable "environment" {
   description = "Environment name"
   type        = string
-  default     = "prod"
-}
-
-variable "tags" {
-  description = "Common tags for all resources"
-  type        = map(string)
-  default = {
-    ManagedBy = "terraform"
-    Project   = "terraform-backend"
-  }
+  default     = "dev"
 }

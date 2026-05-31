@@ -1,24 +1,28 @@
 output "s3_bucket_name" {
-  description = "Name of the S3 bucket for Terraform state"
-  value       = aws_s3_bucket.terraform_state.id
+  value = local.final_bucket_id
 }
 
 output "s3_bucket_arn" {
-  description = "ARN of the S3 bucket"
-  value       = aws_s3_bucket.terraform_state.arn
+  value = local.final_bucket_arn
 }
 
 output "dynamodb_table_name" {
-  description = "Name of the DynamoDB table for state locking"
-  value       = aws_dynamodb_table.terraform_lock.name
+  value = var.dynamodb_table_name
 }
 
 output "dynamodb_table_arn" {
-  description = "ARN of the DynamoDB table"
-  value       = aws_dynamodb_table.terraform_lock.arn
+  value = local.final_table_arn
 }
 
-output "iam_policy_arn" {
-  description = "ARN of the IAM policy for state access"
-  value       = aws_iam_policy.terraform_state_access.arn
+output "state_access_policy_arn" {
+  value = aws_iam_policy.terraform_state_access.arn
+}
+
+output "resources_status" {
+  value = {
+    bucket_created   = !local.bucket_exists
+    table_created    = !local.table_exists
+    bucket_name      = local.final_bucket_id
+    dynamodb_table   = var.dynamodb_table_name
+  }
 }
