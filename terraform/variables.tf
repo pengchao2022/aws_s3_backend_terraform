@@ -7,6 +7,7 @@ variable "aws_region" {
 variable "bucket_name" {
   description = "S3 bucket name for Terraform state (must be globally unique)"
   type        = string
+  default     = "pengchao2022-terraform-state"
   
   validation {
     condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.bucket_name))
