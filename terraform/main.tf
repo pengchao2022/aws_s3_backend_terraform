@@ -4,22 +4,18 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
-# ============================================
-# S3 Bucket - 通用幂等处理
-# ============================================
-
-# 尝试获取已存在的 S3 桶
+# try to get the exist s3 bucket info
 data "aws_s3_bucket" "existing" {
   bucket = var.bucket_name
 }
 
 locals {
-  # 安全地尝试获取现有桶的信息
+  # try to get the s3 info if it exists
   existing_bucket = try(data.aws_s3_bucket.existing, null)
   bucket_exists   = local.existing_bucket != null && local.existing_bucket.id != null
 }
 
-# 创建 S3 桶（仅在不存在时创建）
+# create s3 only it's not exist 
 resource "aws_s3_bucket" "terraform_state" {
   count = local.bucket_exists ? 0 : 1
   
@@ -33,7 +29,7 @@ resource "aws_s3_bucket" "terraform_state" {
   }
 }
 
-# 版本控制
+# s3 version control
 resource "aws_s3_bucket_versioning" "terraform_state" {
   count = local.bucket_exists ? 0 : 1
   
@@ -43,7 +39,7 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
   }
 }
 
-# 加密配置
+# encrypt configration
 resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
   count = local.bucket_exists ? 0 : 1
   
@@ -55,7 +51,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" 
   }
 }
 
-# 阻止公共访问
+# block public access
 resource "aws_s3_bucket_public_access_block" "terraform_state" {
   count = local.bucket_exists ? 0 : 1
   
@@ -66,11 +62,11 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
   restrict_public_buckets = true
 }
 
-# ============================================
-# DynamoDB Table - 通用幂等处理
-# ============================================
 
-# 尝试获取已存在的 DynamoDB 表
+# DynamoDB Table 
+
+
+# get the dynamodb table if it exists
 data "aws_dynamodb_table" "existing" {
   name = var.dynamodb_table_name
 }
@@ -80,7 +76,7 @@ locals {
   table_exists   = local.existing_table != null && local.existing_table.id != null
 }
 
-# 创建 DynamoDB 表（仅在不存在时创建）
+# create dynamodb table only if it not exists
 resource "aws_dynamodb_table" "terraform_lock" {
   count = local.table_exists ? 0 : 1
   
@@ -101,11 +97,9 @@ resource "aws_dynamodb_table" "terraform_lock" {
   }
 }
 
-# ============================================
-# IAM Policy - 通用幂等处理
-# ============================================
 
-# 尝试获取已存在的 IAM Policy
+# IAM Policy 
+# try to get the exist IAM policy
 data "aws_iam_policy" "existing_policy" {
   name = "TerraformStateAccess-${var.environment}"
 }
@@ -115,23 +109,21 @@ locals {
   policy_exists   = local.existing_policy != null && local.existing_policy.arn != null
 }
 
-# ============================================
-# 最终的资源引用（统一在这一块定义）
-# ============================================
 
+# Final resource references (all defined in this section)
 locals {
-  # S3 最终引用
+  # s3 final refrence 
   final_bucket_id  = local.bucket_exists ? local.existing_bucket.id : aws_s3_bucket.terraform_state[0].id
   final_bucket_arn = local.bucket_exists ? local.existing_bucket.arn : aws_s3_bucket.terraform_state[0].arn
   
-  # DynamoDB 最终引用
+  # DynamoDB final reference
   final_table_arn = local.table_exists ? local.existing_table.arn : aws_dynamodb_table.terraform_lock[0].arn
   
-  # IAM Policy 最终引用
+  # IAM Policy final reference
   final_policy_arn = local.policy_exists ? local.existing_policy.arn : aws_iam_policy.terraform_state_access[0].arn
 }
 
-# 创建 IAM Policy（仅在不存在时创建）
+# create IAM policy only it not exists
 resource "aws_iam_policy" "terraform_state_access" {
   count = local.policy_exists ? 0 : 1
   
