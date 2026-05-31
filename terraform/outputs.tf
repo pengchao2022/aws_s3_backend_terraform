@@ -18,6 +18,10 @@ output "state_access_policy_arn" {
   value = aws_iam_policy.terraform_state_access.arn
 }
 
+output "iam_policy_arn" {
+  value = aws_iam_policy.terraform_state_access.arn
+}
+
 output "resources_status" {
   value = {
     bucket_created   = !local.bucket_exists
